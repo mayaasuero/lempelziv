@@ -23,7 +23,7 @@ def lz77_compress(input):
     algorithm allocates 4 bytes for representing offset
     length 
     """
-    len_search = 1024   # len_search of sliding window
+    len_search = 255   # len_search of sliding window
     len_lookahead = 10
     out = []
     i = 0
@@ -33,16 +33,15 @@ def lz77_compress(input):
 
         # if > 1 bytes representation (i.e. image)
         if i == 0 or search_buffer == (0,0):
-            res = struct.pack(">HHc",0,0,bytes(chr(input[i]),'iso-8859-1'))
-            # print(0,0, chr(input[i]))
+            res = struct.pack(">BBc",0,0,bytes(chr(input[i]),'iso-8859-1'))
+            print(0,0, chr(input[i]))
             i += 1
         else:
             offset, length, nextChar = findLongestMatch(input, search_buffer, len_lookahead, i)
-            # print(offset, length, chr(nextChar))
+            print(offset, length,chr(nextChar))
             # offset = offset << 3
             # pref = offset + length
-            res = struct.pack(">HHc",offset, length, bytes(chr(nextChar),'iso-8859-1'))
-            # print(struct.calcsize(res))
+            res = struct.pack(">BBc",offset, length, bytes(chr(nextChar),'iso-8859-1'))
             i = i+length+1
         out.append(res)
     return out
@@ -52,7 +51,7 @@ def lz77_decompress(input):
     output = []
 
     while i < len(input):
-        offset, length, char = struct.unpack(">HHc",input[i:i+5])
+        offset, length, char = struct.unpack(">BBc",input[i:i+3])
         # offset = pref >> 3
         # length = pref - (offset << 3)
         # print(offset, length, char)
@@ -72,7 +71,7 @@ def lz77_decompress(input):
             # print('\t', chr(ord(char)))
             # output.append(output[start:end])
         # print(output)
-        i += 5
+        i += 3
     # for i in output:
     #     print(i)
 
