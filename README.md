@@ -1,2 +1,2 @@
 ## Lempel Ziv
-Versions: LZ77 (using sliding window)
+Version: LZ77 (using sliding window)
