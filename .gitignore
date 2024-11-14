@@ -2,3 +2,5 @@
 *.jpg
 *.png
 *.pdf
+lempelziv_strict.py
+lempelziv.py

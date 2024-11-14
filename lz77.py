@@ -20,17 +20,17 @@ import json
 # uses sliding window
 def lz77_compress(input):
     """
-    search length is 1024 bytes.
-    algorithm allocates 4 bytes for representing offset
-    length 
+    search length is 2047 bytes.
+    max length of characters
     """
-    len_search = 2047 
+    len_search = 2047
     len_lookahead = 31
     out = []
     i = 0
     
     while i < len(input):        
         search_buffer = (max(0, i-len_search), max(0,i))
+        # print(i, chr(input[i]))
 
         # if > 1 bytes representation (i.e. image)
         if i == 0 or search_buffer == (0,0):
@@ -73,15 +73,15 @@ def findLongestMatch(input, searchSpace,lookahead, current):
     lookahead_window = input[lh_start:lh_end]
 
     # offset, length = match2(search_buffer_window,lookahead_window)    
-    offset, length = match(input, search_buffer_window,lookahead_window)
+    offset, length = match(search_buffer_window,lookahead_window)
     if current + length + 1 <= len(input):
         return offset, length, input[current+length]
     elif offset == 0 and length == 0:
         return offset, length,input[current]
     else:
-        return offset, length, None
+        return offset, length, 0
 
-def match(input, sb, lh):
+def match(sb, lh):
     m = len(sb)
     n = len(lh)
 
@@ -90,24 +90,48 @@ def match(input, sb, lh):
     # traverses search buffer
     for i in range(m):
         # print('i:',i)
-        for j in range(n):
-            curr = 0
-            if n == 1 and sb[0] == lh[0]:
-                offset = 1
-                res = 1
+        j = 0
+        curr = 0
+        
+        # Start matching as long as we are within the bounds of the buffers
+        while (i + curr) < m and (j + curr) < n and sb[i + curr] == lh[j + curr]:
+            curr += 1
+
+            # Limit the match length to 31 characters
+            if curr >= 31:
                 break
-            if lh[0] not in sb:
-                offset = 0
-                res = 0
-                break
-            else:
-                while (i + curr) < m and (j + curr) < n and sb[i + curr] == lh[j + curr]:
-                    curr += 1
-                    if curr > res:
-                        res = curr
-                        offset = m - i
-                break
+
+            # Allow encroaching beyond lookahead if match continues
+            while (i + curr) < m and (j + curr) >= n and sb[i + curr] == sb[i + curr - n]:
+                curr += 1
+                if curr >= 31:
+                    break
+
+            # Update longest match found within the length limit
+            if curr > res:
+                res = curr
+                offset = m - i
+    # if res > 20:
+    #     print(res)
     return offset, res
+        # for j in range(n):
+        #     curr = 0
+    #         if n == 1 and sb[0] == lh[0]:
+    #             offset = 1
+    #             res = 1
+    #             break
+    #         elif lh[0] not in sb:
+    #             offset = 0
+    #             res = 0
+    #             break
+    #         else:
+    #             while (i + curr) < m and (j + curr) < n and sb[i + curr] == lh[j + curr]:
+    #                 curr += 1
+    #                 if curr > res:
+    #                     res = curr
+    #                     offset = m - i
+    #             break
+    # return offset, res
 
 def main():
     text = []
@@ -119,12 +143,12 @@ def main():
     
     args = parser.parse_args()
 
-    if args.compress and not args.decompres:
+    if args.compress and not args.decompress:
         with open(args.file,'rb') as f_in:
             text = f_in.read()
         print('size:',len(text))
         output = lz77_compress(text)
-        print('size:',len(text), len(output))
+        print('size:',len(text), len(output)*4)
 
         output_filename = "compressed-"+args.file
         with open(output_filename, 'wb') as f_out:
