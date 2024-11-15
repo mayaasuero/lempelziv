@@ -15,7 +15,6 @@ I hereby attest to the truth of the following facts:
 """
 import argparse
 import struct
-import json
 
 # uses sliding window
 def lz77_compress(input):
@@ -42,7 +41,6 @@ def lz77_compress(input):
             pref = offset + length
             res = struct.pack(">Hc",pref, bytes(chr(nextChar),'iso-8859-1'))
             i = i+length+1
-            # print(hex(pref), hex(nextChar))
         out.append(res)
     return out
 
@@ -56,7 +54,6 @@ def lz77_decompress(input):
 
         if offset == 0  and length == 0:
             output.append(char)
-
         else:
             start = len(output) - offset
             for idx in range(length):
@@ -67,17 +64,16 @@ def lz77_decompress(input):
     return output
 
 def findLongestMatch(input, searchSpace,lookahead, current):
+    # sets the window
     sb_start, sb_end = searchSpace
     lh_start, lh_end = current, current+1+lookahead
-    search_buffer_window = input[sb_start:sb_end]
-    lookahead_window = input[lh_start:lh_end]
+    search_buffer = input[sb_start:sb_end]
+    lookahead_buffer = input[lh_start:lh_end]
 
-    # offset, length = match2(search_buffer_window,lookahead_window)    
-    offset, length = match(search_buffer_window,lookahead_window)
+    offset, length = match(search_buffer,lookahead_buffer)
+
     if current + length + 1 <= len(input):
         return offset, length, input[current+length]
-    elif offset == 0 and length == 0:
-        return offset, length,input[current]
     else:
         return offset, length, 0
 
@@ -89,19 +85,18 @@ def match(sb, lh):
     res = 0
     # traverses search buffer
     for i in range(m):
-        # print('i:',i)
         j = 0
         curr = 0
         
-        # Start matching as long as we are within the bounds of the buffers
+        # start matching as long as within the bounds of the buffers
         while (i + curr) < m and (j + curr) < n and sb[i + curr] == lh[j + curr]:
             curr += 1
 
-            # Limit the match length to 31 characters
+            # Limit the match length to 31
             if curr >= 31:
                 break
 
-            # Allow encroaching beyond lookahead if match continues
+            # Allow matching beyond lookahead if match continues
             while (i + curr) < m and (j + curr) >= n and sb[i + curr] == sb[i + curr - n]:
                 curr += 1
                 if curr >= 31:
@@ -111,27 +106,9 @@ def match(sb, lh):
             if curr > res:
                 res = curr
                 offset = m - i
-    # if res > 20:
-    #     print(res)
+
     return offset, res
-        # for j in range(n):
-        #     curr = 0
-    #         if n == 1 and sb[0] == lh[0]:
-    #             offset = 1
-    #             res = 1
-    #             break
-    #         elif lh[0] not in sb:
-    #             offset = 0
-    #             res = 0
-    #             break
-    #         else:
-    #             while (i + curr) < m and (j + curr) < n and sb[i + curr] == lh[j + curr]:
-    #                 curr += 1
-    #                 if curr > res:
-    #                     res = curr
-    #                     offset = m - i
-    #             break
-    # return offset, res
+
 
 def main():
     text = []
@@ -148,7 +125,7 @@ def main():
             text = f_in.read()
         print('size:',len(text))
         output = lz77_compress(text)
-        print('size:',len(text), len(output)*4)
+        print('size:',len(text), len(output)*3)
 
         output_filename = "compressed-"+args.file
         with open(output_filename, 'wb') as f_out:
